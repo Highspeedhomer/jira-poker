@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Jira Poker</title>
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;color:#e2e8f0}
+  input,select{width:100%;padding:10px 14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#e2e8f0;font-size:14px;outline:none;box-sizing:border-box;font-family:inherit}
+  input::placeholder{color:#475569}
+  select option{background:#1e1b4b;color:#e2e8f0}
+  button{font-family:inherit;cursor:pointer}
+  button:disabled{cursor:not-allowed;opacity:0.5}
+  .card{background:rgba(255,255,255,0.04);border-radius:16px;padding:22px;border:1px solid rgba(255,255,255,0.08)}
+  .sec-head{font-size:13px;font-weight:600;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+  .lbl{font-size:11px;color:#64748b;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px}
+  #app{max-width:960px;margin:0 auto;padding:22px 18px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:5px 12px 5px 8px;font-size:13px}
+  .vote-card{width:52px;height:62px;border-radius:10px;font-size:14px;font-weight:700;border:none;transition:all 0.12s;cursor:pointer;background:rgba(255,255,255,0.07);color:#cbd5e1;outline:1px solid rgba(255,255,255,0.12)}
+  .vote-card.active{transform:translateY(-4px)}
+  .vote-card.wide{width:68px}
+  .vote-card.pass-btn{width:52px;font-size:12px}
+  .analyst-row{background:rgba(255,255,255,0.02);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;transition:border-color 0.3s;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05)}
+  .avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .stat-lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+  .nav-btn{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:13px;font-weight:500;background:rgba(255,255,255,0.06)}
+  .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2)}
+  .hidden{display:none!important}
+  .badge{border-radius:8px;padding:3px 12px;font-size:13px;color:#64748b;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15)}
+  .badge.voted-revealed{padding:4px 14px;font-size:17px;font-weight:800;border-radius:8px}
+  .pulse{animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+  header{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.1);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .flex{display:flex} .items-center{align-items:center} .gap-8{gap:8px} .gap-10{gap:10px} .gap-12{gap:12px} .flex-1{flex:1} .wrap{flex-wrap:wrap}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ENTRY SCREEN -->
+<div id="screen-entry" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:420px;padding:24px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:56px;margin-bottom:8px">🃏</div>
+      <h1 style="font-size:30px;font-weight:800;letter-spacing:-1px">Jira Poker</h1>
+      <p style="margin-top:8px;color:#64748b;font-size:14px">Real-time planning estimation for your team</p>
+    </div>
+    <div class="card" style="padding:28px">
+      <label class="lbl">Your Name</label>
+      <input id="nameInput" placeholder="e.g. Steve" autocomplete="off"/>
+      <button id="createBtn" onclick="createRoom()" style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:15px">
+        🚀 Create Room (You're the Host)
+      </button>
+      <div style="display:flex;align-items:center;gap:10px;margin:20px 0">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+        <span style="font-size:11px;color:#475569;letter-spacing:1px">OR JOIN EXISTING</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+      </div>
+      <label class="lbl">Room Code</label>
+      <input id="joinInput" placeholder="e.g. A3B7F2" style="letter-spacing:3px;font-weight:700;font-size:18px;text-align:center" oninput="this.value=this.value.toUpperCase()"/>
+      <button id="joinBtn" onclick="joinRoom()" style="margin-top:12px;width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:15px">
+        🔗 Join Room
+      </button>
+      <div id="entryError" style="margin-top:12px;color:#f87171;font-size:13px;text-align:center"></div>
+    </div>
+
+    <!-- Rejoin card -->
+    <div id="rejoinCard" class="hidden" style="margin-top:16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:14px;padding:18px 22px">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">↩ Previous Session Found</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:15px" id="rejoinName"></div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Room <span id="rejoinCode" style="color:#a78bfa;letter-spacing:2px;font-weight:700"></span> · <span id="rejoinRole"></span></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="rejoinSession()" style="padding:9px 18px;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:13px">Rejoin →</button>
+          <button onclick="clearRejoin()" style="padding:9px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#64748b;font-size:13px">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until logged in) -->
+<div id="screen-main" class="hidden">
+  <header>
+    <div class="flex items-center gap-12">
+      <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:17px">🃏</div>
+      <div>
+        <div style="font-weight:700;font-size:16px">Jira Poker</div>
+        <div style="font-size:11px;color:#475569">
+          <span id="hdr-role"></span> · <span id="hdr-room" style="color:#a78bfa;letter-spacing:2px;font-weight:700"></span> · <span id="hdr-name" style="color:#94a3b8"></span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-10">
+      <div id="copyCodeBtn" onclick="copyCode()" title="Click to copy room code" style="background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);border-radius:8px;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#64748b">Room</span>
+        <span id="hdr-room2" style="font-weight:800;letter-spacing:3px;color:#a78bfa;font-size:15px"></span>
+        <span id="copyIcon">📋</span>
+      </div>
+      <div class="flex gap-8" id="hostNav">
+        <button class="nav-btn" id="navLobby" onclick="setScreen('lobby')">🏠 Lobby</button>
+        <button class="nav-btn" id="navHistory" onclick="setScreen('history')">📊 History</button>
+      </div>
+      <div id="memberNav" class="hidden">
+        <button class="nav-btn" id="navHistoryMember" onclick="setScreen('history')">📊 History</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="app">
+
+    <!-- LOBBY -->
+    <div id="screen-lobby" class="hidden">
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">📡</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">Share your room code with the team</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Each person opens this file, enters their name and code <strong id="lobbyCode" style="color:#a78bfa;letter-spacing:2px"></strong> to join live. Votes stay hidden until you reveal.</div>
+        </div>
+        <button id="copyLobbyBtn" onclick="copyCode()" style="padding:8px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#e2e8f0;font-weight:600;font-size:13px;white-space:nowrap">📋 Copy Code</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="sec-head">🎯 New Estimation</div>
+          <label class="lbl">Jira Ticket #</label>
+          <input id="ticketInput" placeholder="e.g. PROJ-1234"/>
+          <label class="lbl" style="margin-top:14px">Story Title</label>
+          <input id="titleInput" placeholder="Describe the story…"/>
+          <button onclick="startSession(false)" style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px">Start Estimation →</button>
+          <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+            <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+            <span style="font-size:11px;color:#475569;letter-spacing:1px">or</span>
+            <div style="flex:1;height:1px;background:rgba(255,255,255,0.07)"></div>
+          </div>
+          <button onclick="startSession(true)" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px">⚡ Speed Round — No Ticket Needed</button>
+          <div style="font-size:11px;color:#475569;text-align:center;margin-top:6px">Vote → Reveal → Save → instantly reset</div>
+        </div>
+
+        <div class="card">
+          <div class="sec-head">👥 Team Members</div>
+          <div class="flex gap-8" style="margin-bottom:14px">
+            <input id="newAnalystInput" placeholder="Add member…" style="flex:1" onkeydown="if(event.key==='Enter')addAnalyst()"/>
+            <button onclick="addAnalyst()" style="padding:10px 14px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:18px">+</button>
+          </div>
+          <div id="analystChips" class="flex wrap" style="gap:8px"></div>
+        </div>
+      </div>
+
+      <div id="lobbyTrends" class="card hidden" style="margin-top:18px">
+        <div class="sec-head">📈 Analyst Trends</div>
+        <div id="trendCards" class="flex wrap" style="gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- WAITING (members before session) -->
+    <div id="screen-waiting" class="hidden" style="text-align:center;padding:80px 20px">
+      <div style="font-size:52px;margin-bottom:16px" class="pulse">⏳</div>
+      <h2 style="font-size:22px;margin-bottom:8px">Waiting for host to start…</h2>
+      <p style="color:#64748b;font-size:14px;margin-bottom:30px">
+        You're in room <strong id="waitingRoom" style="color:#a78bfa;letter-spacing:2px"></strong> as <strong id="waitingName" style="color:#e2e8f0"></strong>
+      </p>
+      <div id="waitingTeam" class="flex wrap" style="gap:10px;justify-content:center"></div>
+    </div>
+
+    <!-- GAME -->
+    <div id="screen-game" class="hidden">
+      <!-- Session bar -->
+      <div id="sessionBar" style="border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03)">
+        <span id="speedBadge" class="hidden" style="background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:6px;padding:2px 10px;font-size:11px;font-weight:700">⚡ SPEED</span>
+        <div id="sessionMetaHost" class="hidden flex gap-8 flex-1 wrap">
+          <input id="gameTicket" placeholder="Ticket # (optional)" style="width:150px;flex:none" oninput="updateSessionMeta('ticket',this.value)"/>
+          <input id="gameTitle" placeholder="Story title (optional)" style="flex:1;min-width:180px" oninput="updateSessionMeta('title',this.value)"/>
+        </div>
+        <div id="sessionMetaMember" class="hidden flex-1">
+          <span id="memberTicketBadge" class="hidden" style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:6px;padding:2px 10px;font-size:12px;font-weight:700;margin-right:10px"></span>
+          <span id="memberTitleText" style="font-size:15px;font-weight:600"></span>
+        </div>
+        <div class="flex items-center gap-10" style="margin-left:auto">
+          <span id="voteCount" style="font-size:12px;color:#475569"></span>
+          <button id="endSessionBtn" class="hidden" onclick="endSession()" style="padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#475569;font-size:12px">✕ End</button>
+        </div>
+      </div>
+
+      <!-- My vote (members only) -->
+      <div id="myVoteCard" class="hidden card" style="margin-bottom:16px;border:1px solid rgba(167,139,250,0.25);background:rgba(167,139,250,0.05)">
+        <div class="flex items-center gap-10" style="margin-bottom:14px">
+          <div id="myAvatar" class="avatar"></div>
+          <span id="myVoteLabel" style="font-weight:700;font-size:15px"></span>
+          <span id="myVoteStatus" class="hidden" style="margin-left:auto;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);border-radius:6px;padding:3px 12px;font-size:13px;color:#34d399">✓ Locked in — hidden until reveal</span>
+          <span id="myVoteRevealed" class="hidden" style="margin-left:auto;border-radius:8px;padding:4px 16px;font-size:18px;font-weight:800"></span>
+        </div>
+        <div id="myVoteButtons" class="flex wrap" style="gap:8px"></div>
+        <div id="customVoteRow" class="hidden flex gap-8" style="margin-top:10px">
+          <input id="customVoteInput" placeholder="Enter hours (e.g. 4.5)" onkeydown="if(event.key==='Enter')submitCustom()"/>
+          <button onclick="submitCustom()" id="customSetBtn" style="padding:10px 16px;border:none;border-radius:8px;color:#fff;font-weight:700">Set</button>
+          <button onclick="document.getElementById('customVoteRow').classList.add('hidden')" style="padding:10px 16px;background:rgba(255,255,255,0.07);border:none;border-radius:8px;color:#94a3b8">✕</button>
+        </div>
+      </div>
+
+      <!-- All analysts -->
+      <div id="analystRows"></div>
+
+      <!-- Action bar -->
+      <div id="actionBar" class="flex gap-12 items-center" style="margin-top:16px">
+        <button id="revealBtn" onclick="revealVotes()" class="hidden" style="padding:12px 28px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#fff">🂠 Reveal Cards</button>
+        <span id="waitingRevealMsg" class="hidden" style="font-size:13px;color:#475569;font-style:italic"></span>
+        <span id="revealHint" class="hidden" style="font-size:12px;color:#475569;font-style:italic"></span>
+        <div id="resultsPanel" class="hidden flex-1 card">
+          <div class="flex gap-20 items-end wrap">
+            <div><div class="stat-lbl">Most Common</div><div id="mostCommon" style="font-size:32px;font-weight:800;color:#a78bfa"></div></div>
+            <div><div class="stat-lbl">Average</div><div id="avgVal" style="font-size:32px;font-weight:800;color:#34d399"></div></div>
+            <div id="finalEstRow" class="hidden flex-1" style="min-width:220px">
+              <div class="stat-lbl">Final Estimate</div>
+              <div class="flex gap-8">
+                <input id="finalEstInput" placeholder=""/>
+                <button onclick="saveAndNext()" id="saveNextBtn" style="padding:10px 18px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:#fff;font-weight:700;white-space:nowrap">💾 Save &amp; Next</button>
+              </div>
+            </div>
+            <div id="waitingFinalMsg" class="hidden" style="color:#475569;font-size:13px;font-style:italic">Waiting for host to finalize…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="screen-history" class="hidden">
+      <div class="flex items-center" style="justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:20px;font-weight:700">📊 Estimation History</h2>
+        <div class="flex gap-8 items-center">
+          <span style="font-size:12px;color:#475569">Filter:</span>
+          <select id="historyFilter" onchange="renderHistory()" style="padding:7px 12px;min-width:130px"></select>
+        </div>
+      </div>
+      <div id="historyTrends" class="flex wrap" style="gap:12px;margin-bottom:22px"></div>
+      <div id="historyList"></div>
+    </div>
+
+  </div><!-- #app -->
+</div><!-- #screen-main -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+// ── Firebase ──────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDgfeu84PxIMBnEaBITz2z4gDs2oZEPEJc",
+  authDomain: "jirapoker.firebaseapp.com",
+  databaseURL: "https://jirapoker-default-rtdb.firebaseio.com",
+  projectId: "jirapoker",
+  storageBucket: "jirapoker.firebasestorage.app",
+  messagingSenderId: "946870619277",
+  appId: "1:946870619277:web:26435008ed00f1aaf1a6c4"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Wrap Firebase calls to use modular API
+const dbRef = (path) => ref(db, path);
+const dbSet = (path, val) => set(ref(db, path), val);
+const dbGet = (path) => get(ref(db, path));
+const dbUpdate = (path, val) => update(ref(db, path), val);
+const dbPush = (path, val) => push(ref(db, path), val);
+const dbListen = (path, cb) => { onValue(ref(db, path), cb); return () => onValue(ref(db, path), cb); };
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let myName = '', isHost = false, roomCode = '';
+let analysts = ["Steve","Adam","Carlos","Zegeye","Kyle","Reggie"];
+let roomData = null, myVote = null, speedRound = false, roundCount = 0;
+let currentScreen = 'entry';
+let roomListener = null;
+
+const FIBONACCI = ["1","2","3","5","8","13","21","34","?","☕","Other"];
+const COLORS = ["#3B82F6","#10B981","#F59E0B","#EF4444","#8B5CF6","#EC4899","#14B8A6","#F97316"];
+
+function genCode(n=6){ return Math.random().toString(36).substr(2,n).toUpperCase(); }
+function analystColor(name){ const i=analysts.indexOf(name); return COLORS[Math.max(0,i)%COLORS.length]; }
+function $(id){ return document.getElementById(id); }
+
+// ── Screen management ─────────────────────────────────────────────────────────
+const SCREENS = ['entry','lobby','waiting','game','history'];
+function showScreen(name){
+  currentScreen = name;
+  $('screen-entry').classList.toggle('hidden', name!=='entry');
+  $('screen-main').classList.toggle('hidden', name==='entry');
+  if(name!=='entry'){
+    ['lobby','waiting','game','history'].forEach(s => $('screen-'+s).classList.toggle('hidden', s!==name));
+    // Host nav
+    $('hostNav').classList.toggle('hidden', !isHost);
+    $('navLobby').classList.toggle('hidden', !isHost || name==='lobby');
+    $('navLobby').classList.toggle('active', name==='lobby');
+    $('navHistory').classList.toggle('active', name==='history');
+    // Member nav — always show history button, hide if on history screen
+    $('memberNav').classList.toggle('hidden', isHost || name==='history');
+    $('navHistoryMember').classList.toggle('active', name==='history');
+    // Back button for members on history screen
+    if(!isHost && name==='history'){
+      $('memberNav').classList.remove('hidden');
+      $('navHistoryMember').textContent = '← Back';
+      $('navHistoryMember').onclick = () => { $('navHistoryMember').textContent='📊 History'; setScreen(roomData?.session ? 'game' : 'waiting'); };
+    } else if(!isHost) {
+      $('navHistoryMember').textContent = '📊 History';
+      $('navHistoryMember').onclick = () => setScreen('history');
+    }
+  }
+}
+function setScreen(s){ showScreen(s); }
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function createRoom(){
+  const name = $('nameInput').value.trim();
+  if(!name) return;
+  const code = genCode();
+  myName = name; isHost = true; roomCode = code;
+  await dbSet(`rooms/${code}`, {
+    host: name, analysts,
+    session: null, votes: {}, revealed: false, history: {},
+    createdAt: Date.now()
+  });
+  saveSession(); initHeader(); subscribeRoom(); showScreen('lobby');
+}
+
+async function joinRoom(){
+  const name = $('nameInput').value.trim();
+  const code = $('joinInput').value.trim().toUpperCase();
+  if(!name || !code){ $('entryError').textContent='Enter your name and a room code.'; return; }
+  const snap = await dbGet(`rooms/${code}`);
+  if(!snap.exists()){ $('entryError').textContent='Room not found — double-check the code.'; return; }
+  myName = name; isHost = false; roomCode = code;
+  saveSession(); initHeader(); subscribeRoom(); showScreen('waiting');
+}
+
+function initHeader(){
+  $('hdr-role').textContent = isHost ? '👑 Host' : '👤 Member';
+  $('hdr-room').textContent = roomCode;
+  $('hdr-room2').textContent = roomCode;
+  $('hdr-name').textContent = myName;
+  $('lobbyCode').textContent = roomCode;
+  $('waitingRoom').textContent = roomCode;
+  $('waitingName').textContent = myName;
+}
+
+// ── Firebase sync ─────────────────────────────────────────────────────────────
+let prevSessionId = null;
+function subscribeRoom(){
+  if(roomListener) roomListener();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  roomListener = onValue(roomRef, snap => {
+    const data = snap.val(); if(!data) return;
+    roomData = data;
+    if(data.analysts) analysts = data.analysts;
+    const session = data.session;
+    const votes   = data.votes || {};
+    const revealed= data.revealed || false;
+    if(session && session.id !== prevSessionId){
+      prevSessionId = session.id;
+      myVote = null;
+    }
+    if(!isHost){
+      if(session && currentScreen !== 'game') showScreen('game');
+      else if(!session && currentScreen === 'game') showScreen('waiting');
+    }
+    renderAll(session, votes, revealed);
+  });
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+function renderAll(session, votes, revealed){
+  if(currentScreen==='lobby')   renderLobby(votes);
+  if(currentScreen==='waiting') renderWaiting();
+  if(currentScreen==='game')    renderGame(session, votes, revealed);
+  if(currentScreen==='history') renderHistory();
+  renderAnalystChips();
+}
+
+function renderAnalystChips(){
+  const el = $('analystChips'); if(!el) return;
+  el.innerHTML = analysts.map((a,i)=>`
+    <div class="chip" style="background:${COLORS[i%COLORS.length]}22;border:1px solid ${COLORS[i%COLORS.length]}55">
+      <div style="width:7px;height:7px;border-radius:50%;background:${COLORS[i%COLORS.length]}"></div>
+      <span>${a}</span>
+      ${isHost?`<button onclick="removeAnalyst('${a}')" style="background:none;border:none;color:#475569;font-size:14px;padding:0;margin-left:2px">×</button>`:''}
+    </div>`).join('');
+}
+
+function renderLobby(votes){
+  // Trends
+  const history = roomData?.history ? Object.values(roomData.history) : [];
+  if(history.length>0){
+    $('lobbyTrends').classList.remove('hidden');
+    $('trendCards').innerHTML = analysts.map((a,i)=>{
+      const s=getAnalystStats(a,history); if(!s) return '';
+      return `<div style="background:${COLORS[i%COLORS.length]}15;border:1px solid ${COLORS[i%COLORS.length]}40;border-radius:12px;padding:12px 18px;min-width:120px">
+        <div style="font-size:11px;color:${COLORS[i%COLORS.length]};font-weight:600">${a}</div>
+        <div style="font-size:26px;font-weight:800">${s.avg}</div>
+        <div style="font-size:11px;color:#475569">${s.count} estimates</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderWaiting(){
+  const el=$('waitingTeam'); if(!el) return;
+  el.innerHTML=analysts.map((a,i)=>`
+    <div style="background:${COLORS[i%COLORS.length]}15;border:1px solid ${COLORS[i%COLORS.length]}40;border-radius:20px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:6px">
+      <div style="width:7px;height:7px;border-radius:50%;background:${COLORS[i%COLORS.length]}"></div>
+      ${a} ${a===myName?'<span style="color:#64748b">(you)</span>':''}
+    </div>`).join('');
+}
+
+function renderGame(session, votes, revealed){
+  if(!session) return;
+  const vCount=Object.keys(votes).length;
+  const isSpeed=session.speed||false;
+
+  // Session bar
+  $('sessionBar').style.background=isSpeed?'rgba(245,158,11,0.07)':'rgba(255,255,255,0.03)';
+  $('sessionBar').style.border=isSpeed?'1px solid rgba(245,158,11,0.22)':'1px solid rgba(255,255,255,0.07)';
+  $('speedBadge').classList.toggle('hidden',!isSpeed);
+  if(isSpeed) $('speedBadge').textContent=`⚡ SPEED #${roundCount+1}`;
+  $('sessionMetaHost').classList.toggle('hidden',!isHost);
+  $('sessionMetaMember').classList.toggle('hidden',isHost);
+  if(isHost){
+    if($('gameTicket').value!==session.ticket) $('gameTicket').value=session.ticket||'';
+    if($('gameTitle').value!==session.title)   $('gameTitle').value=session.title||'';
+  } else {
+    const t=session.ticket||''; const ti=session.title||'';
+    $('memberTicketBadge').classList.toggle('hidden',!t);
+    $('memberTicketBadge').textContent=t;
+    $('memberTitleText').textContent=ti||'Waiting for host to add story details…';
+  }
+  $('voteCount').textContent=`${vCount}/${analysts.length} voted`;
+  $('endSessionBtn').classList.toggle('hidden',!isHost);
+
+  // My vote card (members)
+  $('myVoteCard').classList.toggle('hidden', isHost);
+  if(!isHost){
+    const color=analystColor(myName);
+    $('myAvatar').style.background=`linear-gradient(135deg,${color},${color}88)`;
+    $('myAvatar').textContent=(myName[0]||'?').toUpperCase();
+    $('myVoteLabel').textContent=`Your Vote · ${myName}`;
+    $('myVoteStatus').classList.toggle('hidden',!myVote||revealed);
+    $('myVoteRevealed').classList.toggle('hidden',!myVote||!revealed);
+    if(myVote&&revealed){
+      $('myVoteRevealed').textContent=myVote;
+      $('myVoteRevealed').style.color=color;
+      $('myVoteRevealed').style.background=`${color}25`;
+      $('myVoteRevealed').style.border=`1px solid ${color}`;
+    }
+    $('myVoteButtons').classList.toggle('hidden',revealed);
+    if(!revealed){
+      $('customSetBtn').style.background=`linear-gradient(135deg,${color},${color}88)`;
+      $('myVoteButtons').innerHTML=FIBONACCI.map(c=>`
+        <button class="vote-card${c==='Other'?' wide':''}${myVote===c?' active':''}"
+          style="${myVote===c?`background:linear-gradient(135deg,${color},${color}99);color:#fff;box-shadow:0 8px 20px ${color}44;outline:2px solid ${color}`:''}"
+          onclick="castVote('${c}')">${c}</button>
+      `).join('')+`<button class="vote-card pass-btn${myVote==='–'?' active':''}"
+        style="${myVote==='–'?`background:rgba(100,116,139,0.4);color:#fff`:''}"
+        onclick="passVote()" title="Pass">Pass</button>`;
+    }
+  }
+
+  // All analyst rows
+  const rowsEl=$('analystRows'); rowsEl.innerHTML='';
+  analysts.forEach((analyst,i)=>{
+    const vote=votes[analyst]; const color=analystColor(analyst);
+    const row=document.createElement('div');
+    row.className='analyst-row';
+    row.style.border=vote?`1px solid ${color}35`:'1px solid rgba(255,255,255,0.05)';
+
+    let badgeHTML='<span style="font-size:12px;color:#334155;font-style:italic">waiting…</span>';
+    if(vote && !revealed) badgeHTML=`<span class="badge">✓ Voted</span>`;
+    if(vote && revealed)  badgeHTML=`<span class="badge voted-revealed" style="background:${color}22;border:1px solid ${color};color:${color}">${vote}</span>`;
+
+    let hostVoteBtns='';
+    if(isHost && !revealed){
+      hostVoteBtns=`<div class="flex wrap" style="gap:5px">`+
+        FIBONACCI.map(c=>`<button onclick="hostCastVote('${analyst}','${c}')"
+          style="width:${c==='Other'?52:36}px;height:42px;border-radius:7px;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all 0.1s;
+          background:${vote===c?`linear-gradient(135deg,${color},${color}88)`:'rgba(255,255,255,0.05)'};
+          color:${vote===c?'#fff':'#64748b'};
+          outline:${vote===c?`2px solid ${color}`:'1px solid rgba(255,255,255,0.08)'};
+          transform:${vote===c?'translateY(-2px)':'none'}">${c}</button>`).join('')+
+        `<button onclick="hostCastVote('${analyst}','–')"
+          style="width:40px;height:42px;border-radius:7px;font-size:11px;font-weight:700;border:none;cursor:pointer;
+          background:${vote==='–'?'rgba(100,116,139,0.35)':'rgba(255,255,255,0.04)'};color:#475569;outline:1px dashed rgba(255,255,255,0.1)">Pass</button>
+        </div>`;
+    }
+
+    row.innerHTML=`
+      <div class="avatar" style="background:linear-gradient(135deg,${color},${color}88)">${analyst[0].toUpperCase()}</div>
+      <span style="font-weight:600;font-size:14px;flex:1">${analyst}${analyst===myName?' <span style="font-size:11px;color:#475569">(you)</span>':''}</span>
+      ${hostVoteBtns}
+      ${badgeHTML}`;
+    rowsEl.appendChild(row);
+  });
+
+  // Action bar
+  const anyVoted=Object.keys(votes).length>0;
+  const allVoted=analysts.every(a=>votes[a]);
+  $('revealBtn').classList.toggle('hidden', !isHost||revealed);
+  $('revealBtn').disabled=!anyVoted;
+  $('revealHint').classList.toggle('hidden',!isHost||revealed||!anyVoted||allVoted);
+  if(!allVoted&&anyVoted) $('revealHint').textContent=`${analysts.filter(a=>!votes[a]).length} still waiting — reveal anyway?`;
+  $('waitingRevealMsg').classList.toggle('hidden', isHost||revealed);
+  if(!isHost&&!revealed) $('waitingRevealMsg').textContent=myVote?`${vCount}/${analysts.length} voted · waiting for host to reveal…`:'Pick a card above ↑';
+  $('resultsPanel').classList.toggle('hidden',!revealed);
+  if(revealed){
+    $('mostCommon').textContent=getMostCommon(votes);
+    $('avgVal').textContent=getAverage(votes);
+    $('finalEstRow').classList.toggle('hidden',!isHost);
+    $('waitingFinalMsg').classList.toggle('hidden',isHost);
+    $('finalEstInput').placeholder=getMostCommon(votes);
+    $('saveNextBtn').textContent=speedRound?'⚡ Next Round':'💾 Save & Next';
+  }
+}
+
+function renderHistory(){
+  const history=roomData?.history?Object.values(roomData.history).reverse():[];
+  const filter=$('historyFilter').value||'All';
+
+  // Trends
+  $('historyTrends').innerHTML=analysts.map((a,i)=>{
+    const s=getAnalystStats(a,history);
+    return `<div onclick="setHistoryFilter('${a}')" style="background:${COLORS[i%COLORS.length]}15;border:1px solid ${COLORS[i%COLORS.length]}40;border-radius:12px;padding:12px 18px;min-width:130px;cursor:pointer;${filter===a?`outline:2px solid ${COLORS[i%COLORS.length]}`:''}">
+      <div style="font-size:11px;color:${COLORS[i%COLORS.length]};font-weight:600">${a}</div>
+      <div style="font-size:26px;font-weight:800">${s?s.avg:'—'}</div>
+      <div style="font-size:11px;color:#475569">${s?`${s.count} sessions`:'No data'}</div>
+    </div>`;
+  }).join('');
+
+  // Filter dropdown
+  const sel=$('historyFilter');
+  const cur=sel.value;
+  sel.innerHTML='<option>All</option>'+analysts.map(a=>`<option ${a===cur?'selected':''}>${a}</option>`).join('');
+
+  const filtered=filter==='All'?history:history.filter(h=>h.votes?.[filter]!==undefined);
+  if(filtered.length===0){
+    $('historyList').innerHTML=`<div style="text-align:center;padding:60px 20px;color:#475569"><div style="font-size:48px">🃏</div><div style="margin-top:12px">No history yet.</div></div>`;
+    return;
+  }
+  $('historyList').innerHTML=filtered.map(entry=>`
+    <div class="card" style="margin-bottom:12px">
+      <div class="flex items-center" style="justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div class="flex items-center gap-10">
+          ${entry.ticket?`<span style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">${entry.ticket}</span>`:''}
+          <span style="font-weight:600">${entry.title||'Untitled'}</span>
+        </div>
+        <div class="flex items-center gap-10">
+          <span style="font-size:12px;color:#475569">${entry.date} · ${entry.time}</span>
+          <span style="background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.4);border-radius:8px;padding:3px 12px;font-size:14px;font-weight:700;color:#a78bfa">Final: ${entry.finalEstimate}</span>
+        </div>
+      </div>
+      <div class="flex wrap" style="gap:8px">
+        ${Object.entries(entry.votes||{}).map(([analyst,vote])=>{
+          const idx=analysts.indexOf(analyst); const color=COLORS[idx>=0?idx%COLORS.length:0];
+          return `<div style="background:${color}15;border:1px solid ${color}40;border-radius:8px;padding:4px 12px;font-size:13px">
+            <span style="color:#475569">${analyst}: </span><span style="color:${color};font-weight:700">${vote}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function addAnalyst(){
+  const val=$('newAnalystInput').value.trim();
+  if(!val) return;
+  analysts=[...analysts,val];
+  $('newAnalystInput').value='';
+  dbUpdate(`rooms/${roomCode}`,{analysts});
+}
+function removeAnalyst(name){
+  analysts=analysts.filter(a=>a!==name);
+  dbUpdate(`rooms/${roomCode}`,{analysts});
+}
+
+function startSession(isSpeed){
+  const ticket=$('ticketInput').value.trim();
+  const title=$('titleInput').value.trim();
+  if(!isSpeed && !ticket && !title) return;
+  if(isSpeed) speedRound=true;
+  const sessionId=genCode(9);
+  dbUpdate(`rooms/${roomCode}`,{
+    session:{id:sessionId,ticket,title,speed:isSpeed,startedAt:Date.now()},
+    votes:{}, revealed:false
+  });
+  showScreen('game');
+}
+
+function castVote(value){
+  if(value==='Other'){ $('customVoteRow').classList.remove('hidden'); $('customVoteInput').focus(); return; }
+  myVote=value;
+  $('customVoteRow').classList.add('hidden');
+  dbUpdate(`rooms/${roomCode}/votes`,{[myName]:value});
+}
+function passVote(){ myVote='–'; dbUpdate(`rooms/${roomCode}/votes`,{[myName]:'–'}); }
+function submitCustom(){
+  const val=$('customVoteInput').value.trim();
+  if(!val) return;
+  myVote=val+'h';
+  $('customVoteInput').value='';
+  $('customVoteRow').classList.add('hidden');
+  dbUpdate(`rooms/${roomCode}/votes`,{[myName]:myVote});
+}
+function hostCastVote(analyst, value){
+  if(value==='Other'){
+    const v=prompt('Enter custom hours for '+analyst+':');
+    if(v) dbUpdate(`rooms/${roomCode}/votes`,{[analyst]:v+'h'});
+  } else {
+    dbUpdate(`rooms/${roomCode}/votes`,{[analyst]:value});
+  }
+}
+function updateSessionMeta(field,val){
+  dbUpdate(`rooms/${roomCode}/session`,{[field]:val});
+}
+function revealVotes(){
+  dbUpdate(`rooms/${roomCode}`,{revealed:true});
+}
+async function saveAndNext(){
+  const votes=roomData?.votes||{};
+  const session=roomData?.session||{};
+  const entry={
+    id:genCode(9),
+    ticket:session.ticket||'',
+    title:session.title||`Speed Round #${roundCount+1}`,
+    date:new Date().toLocaleDateString(),
+    time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+    votes:{...votes},
+    finalEstimate:$('finalEstInput').value.trim()||getMostCommon(votes)
+  };
+  await dbPush(`rooms/${roomCode}/history`,entry);
+  $('finalEstInput').value='';
+  if(speedRound){
+    roundCount++;
+    dbUpdate(`rooms/${roomCode}`,{
+      session:{id:genCode(9),ticket:'',title:'',speed:true,startedAt:Date.now()},
+      votes:{}, revealed:false
+    });
+  } else {
+    speedRound=false;
+    dbUpdate(`rooms/${roomCode}`,{session:null,votes:{},revealed:false});
+    $('ticketInput').value=''; $('titleInput').value='';
+    showScreen('lobby');
+  }
+}
+function endSession(){
+  speedRound=false;
+  dbUpdate(`rooms/${roomCode}`,{session:null,votes:{},revealed:false});
+  $('ticketInput').value=''; $('titleInput').value='';
+  showScreen('lobby');
+}
+function setHistoryFilter(a){
+  $('historyFilter').value=$('historyFilter').value===a?'All':a;
+  renderHistory();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getMostCommon(votes){
+  const vals=Object.values(votes||{});
+  if(!vals.length) return '—';
+  const freq={};
+  vals.forEach(v=>{freq[v]=(freq[v]||0)+1;});
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function getAverage(votes){
+  const nums=Object.values(votes||{}).map(v=>parseFloat(v)).filter(n=>!isNaN(n));
+  if(!nums.length) return '—';
+  return (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1);
+}
+function getAnalystStats(analyst,history){
+  const entries=(history||[]).filter(h=>h.votes?.[analyst]!==undefined);
+  if(!entries.length) return null;
+  const nums=entries.map(e=>parseFloat(e.votes[analyst])).filter(n=>!isNaN(n));
+  return {count:entries.length, avg:nums.length?(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1):'—'};
+}
+function copyCode(){
+  navigator.clipboard.writeText(roomCode).then(()=>{
+    $('copyIcon').textContent='✅';
+    $('copyLobbyBtn').textContent='✅ Copied!';
+    setTimeout(()=>{ $('copyIcon').textContent='📋'; $('copyLobbyBtn').textContent='📋 Copy Code'; },2000);
+  });
+}
+
+// ── localStorage persistence ─────────────────────────────────────────────────
+function saveSession(){
+  localStorage.setItem('jpSession', JSON.stringify({ myName, roomCode, isHost }));
+}
+function loadSavedSession(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('jpSession'));
+    if(!saved || !saved.roomCode || !saved.myName) return;
+    $('rejoinCard').classList.remove('hidden');
+    $('rejoinName').textContent = saved.myName;
+    $('rejoinCode').textContent = saved.roomCode;
+    $('rejoinRole').textContent = saved.isHost ? '👑 Host' : '👤 Member';
+  } catch(e){}
+}
+async function rejoinSession(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('jpSession'));
+    if(!saved) return;
+    const snap = await dbGet(`rooms/${saved.roomCode}`);
+    if(!snap.exists()){ alert('That room no longer exists in Firebase.'); clearRejoin(); return; }
+    myName = saved.myName; roomCode = saved.roomCode; isHost = saved.isHost;
+    analysts = snap.val().analysts || analysts;
+    initHeader(); subscribeRoom();
+    // Go straight to history so they can see past votes
+    showScreen('history');
+  } catch(e){ alert('Could not rejoin: ' + e.message); }
+}
+function clearRejoin(){
+  localStorage.removeItem('jpSession');
+  $('rejoinCard').classList.add('hidden');
+}
+
+// Enter key on name input
+document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') createRoom(); });
+
+// Check for saved session on page load
+loadSavedSession();
+
+// Expose functions to window so inline onclick handlers work from module scope
+Object.assign(window, {
+  createRoom, joinRoom, setScreen, addAnalyst, removeAnalyst,
+  startSession, castVote, passVote, submitCustom, hostCastVote,
+  updateSessionMeta, revealVotes, saveAndNext, endSession,
+  setHistoryFilter, copyCode, rejoinSession, clearRejoin
+});
+</script>
+</body>
+</html>
