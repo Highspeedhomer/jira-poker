@@ -122,7 +122,7 @@
           <div style="font-weight:600;font-size:14px">Share your room code with the team</div>
           <div style="font-size:12px;color:#64748b;margin-top:2px">Each person opens this file, enters their name and code <strong id="lobbyCode" style="color:#a78bfa;letter-spacing:2px"></strong> to join live. Votes stay hidden until you reveal.</div>
         </div>
-        <button id="copyLobbyBtn" onclick="copyCode()" style="padding:8px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#e2e8f0;font-weight:600;font-size:13px;white-space:nowrap">📋 Copy Code</button>
+        <button id="copyLobbyBtn" onclick="copyCode()" style="padding:8px 16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#e2e8f0;font-weight:600;font-size:13px;white-space:nowrap">📋 Copy Link</button>
       </div>
 
       <div class="grid2">
@@ -680,11 +680,16 @@ function getAnalystStats(analyst,history){
   const nums=entries.map(e=>parseFloat(e.votes[analyst])).filter(n=>!isNaN(n));
   return {count:entries.length, avg:nums.length?(nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1):'—'};
 }
+function getRoomUrl(){
+  const base = window.location.href.split('?')[0].split('#')[0];
+  return `${base}?room=${roomCode}`;
+}
 function copyCode(){
-  navigator.clipboard.writeText(roomCode).then(()=>{
+  const url = getRoomUrl();
+  navigator.clipboard.writeText(url).then(()=>{
     $('copyIcon').textContent='✅';
     $('copyLobbyBtn').textContent='✅ Copied!';
-    setTimeout(()=>{ $('copyIcon').textContent='📋'; $('copyLobbyBtn').textContent='📋 Copy Code'; },2000);
+    setTimeout(()=>{ $('copyIcon').textContent='📋'; $('copyLobbyBtn').textContent='📋 Copy Link'; },2000);
   });
 }
 
@@ -725,6 +730,20 @@ document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==
 
 // Check for saved session on page load
 loadSavedSession();
+
+// Auto-fill room code from URL ?room=XXXXXX
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const r = params.get('room');
+  if(r){
+    $('joinInput').value = r.toUpperCase();
+    // Highlight the name field so user knows what to fill in
+    $('nameInput').focus();
+    // Show a subtle hint
+    $('entryError').style.color = '#34d399';
+    $('entryError').textContent = 'Room code auto-filled — just enter your name and click Join!';
+  }
+})();
 
 // Expose functions to window so inline onclick handlers work from module scope
 Object.assign(window, {
